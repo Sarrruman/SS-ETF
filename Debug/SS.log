@@ -1,0 +1,7 @@
+﻿  main.cpp
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\main.cpp(55): warning C4018: '<': signed/unsigned mismatch
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\main.cpp(44): warning C4101: 'n': unreferenced local variable
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\main.cpp(147): warning C4552: '<<': operator has no effect; expected operator with side-effect
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\main.cpp(148): warning C4552: '>>': operator has no effect; expected operator with side-effect
+  SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.exe
+  SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.pdb (Full PDB)
