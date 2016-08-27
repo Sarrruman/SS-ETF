@@ -41,5 +41,8 @@
     <ClInclude Include="symtab.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="relokacija.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

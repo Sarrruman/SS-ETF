@@ -1,0 +1,12 @@
+.public a, b
+.extern c
+
+.text.prvi
+	
+.text.drugi
+a:   add r1, r2
+     adds_eq r1, pc
+b:
+     subs r1, pc
+
+.end

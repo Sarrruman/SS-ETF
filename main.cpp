@@ -6,6 +6,8 @@
 #include "sekcija.h"
 #include <map>
 #include <bitset>
+#include "utilities.h"
+#include "symtab.h"
 
 using namespace std;
 
@@ -14,10 +16,13 @@ void init_hes_funkcija();
 
 void test1();
 void test2();
+void test3();
 
 void main() {
-	test2();
+	test3();
 
+	char n;
+	cin >> n;
 	system("PAUSE");
 }
 
@@ -149,4 +154,35 @@ void test2() {
 	ins |= drugi & 0x0000001f;
 	cout << hex << showbase << ins << endl;
 
+	cout << setfill(' ') << left << setw(20) << "zdravo" << setw(20) << "hello" << setw(20) << "hello"<<  endl;
+	cout << setw(20) << "hello" << setw(20)<< "zdravo " << endl;
+
+}
+
+void test3() {
+	init_hes_funkcija();
+	init_uslovi();
+	init_registri();
+
+	ifstream fin("ulaz.txt");
+	ofstream fout("izlaz.txt");
+	if (!fin.is_open()) { cout << "Nije pronadjen ulazni fajl" << endl; system("PAUSE"); exit(1); }
+	
+	ListaSekcija* lista_sekcija = new ListaSekcija();
+	SymTab* symtab = new SymTab();
+	try {
+		prvi_prolaz(fin, lista_sekcija, symtab);
+		medjukorak(lista_sekcija, symtab);
+		drugi_prolaz(lista_sekcija, symtab);
+		ispis(fout, lista_sekcija, symtab);
+	}
+	catch (Error e) {
+		cout << e.opis << endl;
+	}
+	fin.close();
+	fout.close();
+	delete lista_sekcija;
+	delete symtab;
+
+	cout << "Uspesno!!!" << endl;
 }

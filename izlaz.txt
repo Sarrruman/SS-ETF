@@ -1,2 +1,33 @@
-0x80000004
-0
+<------ TABELA SIMBOLA ----->
+ime            sekcija        vrednostvidljivost     rbr
+
+<UND>          -1             0              l              0              
+.text.prvi     .text.prvi     0              l              1              
+.text.drugi    .text.drugi    0              l              2              
+a              .text.drugi    0              g              3              
+b              .text.drugi    8              g              4              
+c              -1             0              g              5              
+
+
+<------ TABELA SEKCIJA ------->
+
+.text.prvi
+
+
+.rel.text.prvi
+
+Nema relokacija za sekciju .text.prvi
+
+--------------------
+
+.text.drugi
+
+0:  e1084000
+4:  110a0000
+8:  f20a0000
+
+.rel.text.drugi
+
+Nema relokacija za sekciju .text.drugi
+
+--------------------

@@ -153,6 +153,7 @@
     <ClCompile Include="utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="relokacija.h" />
     <ClInclude Include="sekcija.h" />
     <ClInclude Include="symtab.h" />
     <ClInclude Include="utilities.h" />

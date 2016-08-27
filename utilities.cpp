@@ -5,16 +5,17 @@
 #include <fstream>
 #include <sstream>
 #include "symtab.h"
+#include <iomanip>
 
 list<string> uvoz;
 list <string> izvoz;
 
 extern map<string, fp> hes_funkcija;
 string tekuca_sekcija = "";
-void dodaj_parametre(stringstream& sline, list<string> lista);
-void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
+void dodaj_parametre(stringstream& sline, list<string>& lista);
+void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 	string line;
-	while (getline(*ifs, line)) {
+	while (getline(ifs, line)) {
 		list<string> params;
 		stringstream sline;
 		sline << line;
@@ -22,12 +23,13 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 		string op;
 		sline >> op;
 
-		if (op[op.size() - 1] == ':') {
+		if (!op.empty() && (op[op.size() - 1] == ':')) {
 			if (symtab->exist(op)) throw new Error("Simbol " + op + "je vec definisan!!!");
 			Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 			if (sekcija == nullptr) throw new Error("Labela " + op + "se mora naci u sekciji!!!");
 
 			Simbol* simbol = new Simbol();
+			op.erase(op.size() - 1);
 			simbol->ime = op;
 			simbol->lokal = 'l'; // inicijalno su svi simboli lokalni
 			simbol->offset = sekcija->lc;
@@ -35,7 +37,9 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 			simbol->sekcija = sekcija;
 			symtab->simboli.push_back(simbol);
 
-			sline >> op; // za slucaj da se u istoj liniji gde i labela nalazi instrukcija
+			string s;
+			sline >> skipws >> s;
+			op = s; // za slucaj da se u istoj liniji gde i labela nalazi instrukcija
 		}
 		if (!op.empty()) {
 			string built_op;
@@ -113,8 +117,8 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				}
 				if (br_param <= 3) {
 					int uvecanje = 0;
-					if (sekcija->lc % parametri[1] != 0) uvecanje = parametri[1] - (sekcija->lc % parametri[1]);
-					if (br_param == 3 && parametri[3] < uvecanje);
+					if (sekcija->lc % parametri[0] != 0) uvecanje = parametri[0] - (sekcija->lc % parametri[0]);
+					if (br_param == 3 && parametri[2] < uvecanje);
 					else sekcija->lc += uvecanje;
 				}
 				else if (br_param > 3) { // greska 
@@ -136,7 +140,7 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				string par = ins->parametri.front();
 				int parametar;
 				try {
-					par[0] = 'x' && par[1] == '0' ? (parametar = stoi(par, nullptr, 16)) 
+					par[0] = 'x' && par[1] == '0' ? (parametar = stoi(par, nullptr, 16))
 						: (parametar = stoi(par, nullptr, 10));
 				}
 				catch (invalid_argument e) {
@@ -145,10 +149,10 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				sekcija->lc += parametar;
 			}
 			else if (op == ".public") {
-				dodaj_parametre(sline,  izvoz);
+				dodaj_parametre(sline, izvoz);
 			}
 			else if (op == ".extern") {
-				dodaj_parametre(sline,  uvoz);
+				dodaj_parametre(sline, uvoz);
 			}
 			else if (op == ".end") {
 				return;
@@ -159,9 +163,18 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 
 				if (lista_sekcija->get(op) != nullptr) throw new Error(
 					"Sekcija definisana dva puta!!!");
+				
 				Sekcija* sekcija = new Sekcija(op);
 				lista_sekcija->sekcije.push_back(sekcija);
 				tekuca_sekcija = op;
+				// dodavanje imena sekcije u symtab
+				Simbol* simbol = new Simbol();
+				simbol->ime = op;
+				simbol->lokal = 'l';
+				simbol->offset = 0;
+				simbol->sekcija = sekcija;
+				simbol->rbr = symtab->simboli.size();
+				symtab->simboli.push_back(simbol);
 			}
 			else { // grupa instrukcija koje se obradjuju samo u drugom prolazu
 				bool found = false;
@@ -200,7 +213,7 @@ void prvi_prolaz(ifstream* ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 	}
 }
 
-void dodaj_parametre(stringstream& sline, list<string> lista) {
+void dodaj_parametre(stringstream& sline, list<string>& lista) {
 	while (sline.good())
 	{
 		string param;
@@ -222,7 +235,7 @@ void medjukorak(ListaSekcija* lista_sekcija, SymTab* symtab) {
 	lista_sekcija->resetujBrojace();
 
 	// provera da li su svi simboli koji se izvoze definisani, i azuriranje lokaliteta
-	for (list<string>::iterator it =  izvoz.begin(); it !=  izvoz.end(); ++it) {
+	for (list<string>::iterator it = izvoz.begin(); it != izvoz.end(); ++it) {
 		if (!symtab->exist(*it)) throw new Error("Simbol " + *it + " se izvozi a nije definisan!!!");
 		else {
 			(symtab->get(*it))->lokal = 'g';
@@ -230,15 +243,72 @@ void medjukorak(ListaSekcija* lista_sekcija, SymTab* symtab) {
 	}
 
 	// dodavanje simbola koji se uvoze
-	for (list<string>::iterator it =  uvoz.begin(); it !=  izvoz.end(); ++it) {
+	for (list<string>::iterator it = uvoz.begin(); it != uvoz.end(); ++it) {
 		Simbol* simbol = new Simbol();
 		simbol->ime = (*it);
 		simbol->lokal = 'g';
 		simbol->offset = 0;
 		simbol->sekcija = nullptr;
 		simbol->rbr = symtab->simboli.size();
-		
+
 		symtab->simboli.push_back(simbol);
+	}
+}
+
+// prolazi kroz sve instrukcije i poziva njihove funkcije za obradu
+void drugi_prolaz(ListaSekcija * lista_sekcija, SymTab * symtab) {
+	list<Sekcija*> sekcije = lista_sekcija->sekcije;
+	for (list<Sekcija*>::iterator sek = sekcije.begin(); sek != sekcije.end(); ++sek) {
+		Sekcija* sekcija = *sek;
+		for (list<Instrukcija*>::iterator ins = sekcija->instrukcije.begin(); ins != sekcija->instrukcije.end();
+			++ins) {
+			map<string, fp>::iterator it = hes_funkcija.find((*ins)->ime);
+			fp funkcija = it->second;
+			funkcija(*(*ins), sekcija, symtab);
+		}
+	}
+}
+
+void ispis(ofstream & ofs, ListaSekcija * lista_sekcija, SymTab * symtab)
+{
+	// Ispis tabele simbola
+	ofs << "<------ TABELA SIMBOLA ----->" << endl;
+	ofs << left << setw(15) << "ime" << setw(15) << "sekcija" << setw(5) << "vrednost" << setw(15) << "vidljivost" <<
+		setw(3) << "rbr" << endl << endl;
+	for (list<Simbol*>::iterator it = symtab->simboli.begin(); it != symtab->simboli.end(); ++it) {
+		Simbol s = **it;
+		ofs << setw(15) << s.ime << setw(15) << (s.sekcija ? s.sekcija->ime : "-1") << setw(15) << setbase(16) << s.offset << setbase(10) <<
+			setw(15) << s.lokal << setw(15) << s.rbr  << endl;
+	}
+	// ispisivanje sekcija
+	ofs << endl << endl << "<------ TABELA SEKCIJA ------->" << endl;
+	list<Sekcija*> sekcije = lista_sekcija->sekcije;
+	for (list<Sekcija*>::iterator sek = sekcije.begin(); sek != sekcije.end(); ++sek) {
+		Sekcija* sekcija = *sek;
+		ofs << endl << sekcija->ime << endl;
+
+		int i = 0;
+		for (list<char>::iterator kod = sekcija->niz_bajtova.begin(); kod != sekcija->niz_bajtova.end();
+			++kod) {
+			if (i % 4 == 0) ofs << endl << i << ":  ";
+			ofs << hex << setw(2) << setfill('0') << (*kod) << " ";
+			i ++;
+		}
+		// ispisivanje relokacija
+		ofs << endl << endl;
+		ofs << ".rel" + sekcija->ime << endl << endl;
+		if (sekcija->relokacije.empty()) ofs << "Nema relokacija za sekciju " + sekcija->ime << endl << endl;
+		else {
+			ofs << left << setw(10) << "ofset" << setw(20) << "tip" << setw(3) << "rbr" << endl << endl;
+
+			for (list<Relokacija*>::iterator it = sekcija->relokacije.begin(); it != sekcija->relokacije.end();
+				++it) {
+				Relokacija rel = **it;
+				ofs << left << setw(10) << setbase(16) << rel.offset << setbase(10) << setw(20) << rel.tip
+					<< setw(3) << rel.rbr << endl << endl;
+			}
+		}
+		ofs << "--------------------" << endl;
 	}
 }
 
