@@ -1,33 +1,52 @@
 <------ TABELA SIMBOLA ----->
-ime            sekcija        vrednostvidljivost     rbr
+
+ime            sekcija        vr   vidljivost     rbr
 
 <UND>          -1             0              l              0              
-.text.prvi     .text.prvi     0              l              1              
-.text.drugi    .text.drugi    0              l              2              
-a              .text.drugi    0              g              3              
-b              .text.drugi    8              g              4              
-c              -1             0              g              5              
+.data.prvi     .data.prvi     0              l              1              
+d              .data.prvi     4              l              2              
+.text.drugi    .text.drugi    0              l              3              
+a              .text.drugi    0              g              4              
+b              .text.drugi    4              g              5              
+c              -1             0              g              6              
 
 
-<------ TABELA SEKCIJA ------->
+<------ TABELA SEKCIJA ----->
 
-.text.prvi
+.data.prvi
 
+0  :  f2 0a 00 00 
+4  :  00 05 00 00 
+8  :  00 04 
 
-.rel.text.prvi
+.rel.data.prvi
 
-Nema relokacija za sekciju .text.prvi
+ofset     tip                 rbr
+
+6         R_32                1  
+
+6         R_SUB_32            5  
 
 --------------------
 
 .text.drugi
 
-0:  e1084000
-4:  110a0000
-8:  f20a0000
+0  :  e1 08 40 00 
+4  :  11 0a 00 00 
+8  :  ec 80 00 00 
+c  :  ec 87 ff f4 
+10 :  ea 80 47 f0 
+14 :  ef 18 00 00 
+18 :  ef 10 00 04 
 
 .rel.text.drugi
 
-Nema relokacija za sekciju .text.drugi
+ofset     tip                 rbr
+
+8         R_PC_LAST19         3  
+
+14        R_LAST_16H          1  
+
+18        R_LAST_16L          1  
 
 --------------------

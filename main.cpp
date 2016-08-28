@@ -8,7 +8,9 @@
 #include <bitset>
 #include "utilities.h"
 #include "symtab.h"
-
+#include <string>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 extern map<string, fp> hes_funkcija;
@@ -128,34 +130,30 @@ void test1() {
 	}
 }
 
+int parsiraj_izraz(string izraz, string& op1, string& op2, char& znak);
 void test2() {
 	bitset<32> bitovi;
 
-	int op = 7;
+	string line = "d";
+	while (!line.empty()) {
+		cout << "unesite liniju : " << endl;
+		string izraz;
+		getline(cin, izraz);
+		stringstream sline;
 
-	char prvi = 0, drugi = 0, treci = 0, cetvrti = 0;
-	unsigned long ins = 0;
-	cout << showbase << setbase(16);
-	cout << setw(8) << setfill('0') << ins << endl;
-	int uslov = 2;
-	int s = 1;
-	int prviop = 1;
-	
-	uslov <<= 29;
-	ins |= uslov;
-	s <<= 28;
-	ins |= s;
-	op <<= 24;
-	ins |= op;
+		
+		char znak;
 
-	drugi = -5;
-	drugi << 27;
-	drugi >> 27;
-	ins |= drugi & 0x0000001f;
-	cout << hex << showbase << ins << endl;
-
-	cout << setfill(' ') << left << setw(20) << "zdravo" << setw(20) << "hello" << setw(20) << "hello"<<  endl;
-	cout << setw(20) << "hello" << setw(20)<< "zdravo " << endl;
+		string op1, op2;
+		if (parsiraj_izraz(izraz, op1, op2, znak) == -1) {cout << "Greska"; return;}
+		else {
+			cout << op1 << ":::::::" << endl;
+			cout << znak << ":::::::" << endl;
+			cout << op2 << ":::::::" << endl;
+		}
+	}
+	cout << setfill(' ') << left << setw(20) << "zdravo" << setw(20) << "hello" << setw(20) << "hello" << endl;
+	cout << setw(20) << "hello" << setw(20) << "zdravo " << endl;
 
 }
 
@@ -167,7 +165,7 @@ void test3() {
 	ifstream fin("ulaz.txt");
 	ofstream fout("izlaz.txt");
 	if (!fin.is_open()) { cout << "Nije pronadjen ulazni fajl" << endl; system("PAUSE"); exit(1); }
-	
+
 	ListaSekcija* lista_sekcija = new ListaSekcija();
 	SymTab* symtab = new SymTab();
 	try {

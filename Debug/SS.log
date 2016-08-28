@@ -1,6 +1,5 @@
-﻿  utilities.cpp
+﻿  symtab.cpp
 c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(22): warning C4099: 'Instrukcija': type name first seen using 'class' now seen using 'struct'
   c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(22): note: see declaration of 'Instrukcija'
-c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.cpp(181): warning C4018: '<': signed/unsigned mismatch
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.exe
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.pdb (Full PDB)

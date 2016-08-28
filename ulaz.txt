@@ -1,12 +1,16 @@
 .public a, b
 .extern c
 
-.text.prvi
-	
+.data.prvi
+	subs r1, pc
+d:	.word 0x5
+	.long d - b
 .text.drugi
 a:   add r1, r2
-     adds_eq r1, pc
-b:
-     subs r1, pc
-
+b:   adds_eq r1, pc
+     call d
+	call b
+	ldr r1, b
+	ldc r1, d
+	
 .end

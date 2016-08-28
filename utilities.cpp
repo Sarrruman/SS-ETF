@@ -76,7 +76,17 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				ins->ime = ".long";
 
 				// ekstrahovati parametre
-				dodaj_parametre(sline, ins->parametri);
+				while (sline.good())
+				{
+					string param;
+					getline(sline, param, ',');
+
+					// skloniti whitespaces
+					param = param.substr(param.find_first_not_of(' '),
+						param.find_last_not_of(' ') - param.find_first_not_of(' ') + 1);
+
+					ins->parametri.push_back(param);
+				}
 				// dodati instrukciju u tekucu sekciju
 				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
@@ -163,7 +173,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 
 				if (lista_sekcija->get(op) != nullptr) throw new Error(
 					"Sekcija definisana dva puta!!!");
-				
+
 				Sekcija* sekcija = new Sekcija(op);
 				lista_sekcija->sekcije.push_back(sekcija);
 				tekuca_sekcija = op;
@@ -272,16 +282,16 @@ void drugi_prolaz(ListaSekcija * lista_sekcija, SymTab * symtab) {
 void ispis(ofstream & ofs, ListaSekcija * lista_sekcija, SymTab * symtab)
 {
 	// Ispis tabele simbola
-	ofs << "<------ TABELA SIMBOLA ----->" << endl;
-	ofs << left << setw(15) << "ime" << setw(15) << "sekcija" << setw(5) << "vrednost" << setw(15) << "vidljivost" <<
+	ofs << "<------ TABELA SIMBOLA ----->" << endl << endl;
+	ofs << left << setw(15) << "ime" << setw(15) << "sekcija" << setw(5) << "vr" << setw(15) << "vidljivost" <<
 		setw(3) << "rbr" << endl << endl;
 	for (list<Simbol*>::iterator it = symtab->simboli.begin(); it != symtab->simboli.end(); ++it) {
 		Simbol s = **it;
 		ofs << setw(15) << s.ime << setw(15) << (s.sekcija ? s.sekcija->ime : "-1") << setw(15) << setbase(16) << s.offset << setbase(10) <<
-			setw(15) << s.lokal << setw(15) << s.rbr  << endl;
+			setw(15) << s.lokal << setw(15) << s.rbr << endl;
 	}
 	// ispisivanje sekcija
-	ofs << endl << endl << "<------ TABELA SEKCIJA ------->" << endl;
+	ofs << endl << endl << "<------ TABELA SEKCIJA ----->" << endl;
 	list<Sekcija*> sekcije = lista_sekcija->sekcije;
 	for (list<Sekcija*>::iterator sek = sekcije.begin(); sek != sekcije.end(); ++sek) {
 		Sekcija* sekcija = *sek;
@@ -290,9 +300,11 @@ void ispis(ofstream & ofs, ListaSekcija * lista_sekcija, SymTab * symtab)
 		int i = 0;
 		for (list<char>::iterator kod = sekcija->niz_bajtova.begin(); kod != sekcija->niz_bajtova.end();
 			++kod) {
-			if (i % 4 == 0) ofs << endl << i << ":  ";
-			ofs << hex << setw(2) << setfill('0') << (*kod) << " ";
-			i ++;
+			if (i % 4 == 0) ofs << endl << setw(3) << hex << i << ":  ";
+			int pom = *kod;
+			pom &= 0x000000FF;
+			ofs << noshowbase << right << hex << setw(2) << setfill('0') << pom << " " << dec << setfill(' ') << left;
+			i++;
 		}
 		// ispisivanje relokacija
 		ofs << endl << endl;

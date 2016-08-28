@@ -11,6 +11,7 @@ Simbol* SymTab::get(string name)
 {
 	for (list<Simbol*>::iterator it = simboli.begin(); it != simboli.end(); ++it)
 		if ((*it)->ime == name) return (*it);
+	return nullptr;
 }
 
 SymTab::SymTab()
