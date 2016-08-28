@@ -3,6 +3,7 @@
 #include<string>
 #include "utilities.h"
 #include "sekcija.h"
+#include <exception>
 
 using namespace std;
 
@@ -29,8 +30,12 @@ typedef void(*fp) (Instrukcija&, Sekcija*, SymTab*);
 extern list<string> uvoz;
 extern list <string> izvoz;
 
-class Error {
+class UserError : public exception {
 public:
 	string opis;
-	Error(string opis);
+	UserError(string opis);
+	virtual const char* what() const throw() 
+	{
+		return "error";
+	}
 };

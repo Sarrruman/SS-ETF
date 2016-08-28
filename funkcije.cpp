@@ -46,15 +46,15 @@ void interrupt(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
-	if (ins.parametri.size() != 1) throw new Error("Instrukcija " + ins.ime + " prima 1 parametar, koji je broj");
+	if (ins.parametri.size() != 1) throw new UserError("Instrukcija " + ins.ime + " prima 1 parametar, koji je broj");
 	// pretvaranje parametra u broj
 	int broj;
-	if (param_u_broj(ins.parametri.front(), broj) == -1) throw new Error("Instrukcija " + ins.ime + " broj");
-	if (broj < 0 || broj > 15) throw new Error("Prekid mora biti u opsegu [0, 15]");
+	if (param_u_broj(ins.parametri.front(), broj) == -1) throw new UserError("Instrukcija " + ins.ime + " broj");
+	if (broj < 0 || broj > 15) throw new UserError("Prekid mora biti u opsegu [0, 15]");
 	int rez = 0;
 	int op = 0;
 	rez |= uslov << 29;
@@ -71,11 +71,11 @@ void interrupt(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 void aritmeticka(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // add, sub, mul, div, cmp
 	// parsiranje parametara
 	int imm = 0; // signalizira da je drugi parametar neposredna velicina
-	if (ins.parametri.size() != 2) throw new Error("Aritmeticka funkcija mora imati 2 parametra !!!");
+	if (ins.parametri.size() != 2) throw new UserError("Aritmeticka funkcija mora imati 2 parametra !!!");
 	string par[2];
 	par[0] = ins.parametri.front();
 	par[1] = ins.parametri.back();
-	int prvi, drugi;
+	int prvi = 0, drugi = 0;
 
 	// parsiranje ekstenzija
 	int sign = 0;
@@ -87,23 +87,28 @@ void aritmeticka(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // add, s
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar arit. funkcije mora biti registar"); }
-	if (par[0] == "psw" || par[0] == "PSW") throw new Error("PSW nije dozvoljen u arit. inst!!!");
+	if (it == registri.end()) { throw new UserError("Prvi parametar arit. funkcije mora biti registar"); }
+	if (par[0] == "psw" || par[0] == "PSW") throw new UserError("PSW nije dozvoljen u arit. inst!!!");
 	prvi = it->second;
 
 	// konvertovanje drugog parametra
 	it = (registri.find(par[1]));
 	if (it == registri.end()) imm = 1;
 	else drugi = it->second;
+
+	// provera da li se koriste pc, lr i sp ako ins. nije add ili sub
+	if (ins.ime != "add" && ins.ime != "sub" && (prvi == 16 || prvi == 17 || prvi == 18 || !imm && (
+		drugi == 16 || drugi == 17 || drugi == 18))) throw new UserError
+		(" U aritmetickoj ins nisu dozvoljeni pc, lr ili sp ukoliko se ne radi o ins. add ili sub");
 	// formiranje koda instrukcije
 	int rez = 0; // niz bajtova koji ce se cuvati
-	int op; // kod operacije
+	int op=0; // kod operacije
 	if (ins.ime == "add") op = 1;
 	else if (ins.ime == "sub") op = 2;
 	else if (ins.ime == "mul") op = 3;
@@ -116,14 +121,17 @@ void aritmeticka(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // add, s
 	rez |= prvi << 19;
 	rez |= imm << 18;
 	if (imm) {
-		drugi << 14;
-		drugi >> 14;
-		rez |= drugi & 0x0003ffff;
+		int pom;
+		if (param_u_broj(par[1], pom) == -1) throw new 
+			UserError("Arit. ins. mora za drugi par. imati ili broj ili registar");
+		pom << 14;
+		pom >> 14;
+		rez |= pom & 0x0003ffff;
 	}
 	else {
 		iter it = (registri.find(par[1]));
-		if (it == registri.end()) { throw new Error("Drugi parametar arit. funkcije mora biti ili registar ili broj"); }
-		if (par[1] == "psw" || par[1] == "PSW") throw new Error("PSW nije dozvoljen u arit. inst!!!");
+		if (it == registri.end()) { throw new UserError("Drugi parametar arit. funkcije mora biti ili registar ili broj"); }
+		if (par[1] == "psw" || par[1] == "PSW") throw new UserError("PSW nije dozvoljen u arit. inst!!!");
 		drugi = it->second;
 		rez |= drugi << 13;
 	}
@@ -137,7 +145,7 @@ void aritmeticka(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // add, s
 
 void bitska(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // and, or, not, test
 	int imm = 0; // signalizira da je drugi parametar neposredna velicina
-	if (ins.parametri.size() != 2) throw new Error("Bitska funkcija mora imati 2 parametra !!!");
+	if (ins.parametri.size() != 2) throw new UserError("Bitska funkcija mora imati 2 parametra !!!");
 	string par[2];
 	par[0] = ins.parametri.front();
 	par[1] = ins.parametri.back();
@@ -153,23 +161,27 @@ void bitska(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // and, or, no
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar bitske funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar bitske funkcije mora biti registar"); }
 	if (par[0] == "psw" || par[0] == "PSW" || par[0] == "pc" || par[0] == "PC" || par[0] == "lr" ||
-		par[0] == "LR") throw new Error("PSW, LR I PC nisu dozvoljeni u bitskoj inst!!!");
+		par[0] == "LR") throw new UserError("PSW, LR I PC nisu dozvoljeni u bitskoj inst!!!");
 	prvi = it->second;
 
 	// konvertovanje drugog parametra
 	it = (registri.find(par[1]));
-	if (it == registri.end()) { throw new Error("Drugi parametar bitske funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Drugi parametar bitske funkcije mora biti registar"); }
 	if (par[1] == "psw" || par[1] == "PSW" || par[1] == "pc" || par[1] == "PC" || par[1] == "lr" ||
-		par[1] == "LR") throw new Error("PSW, LR I PC nisu dozvoljeni u bitskoj inst!!!");
+		par[1] == "LR") throw new UserError("PSW, LR I PC nisu dozvoljeni u bitskoj inst!!!");
 	drugi = it->second;
+
+	// provera da li se radi o pc, lr ili psw
+	if (prvi == 16 || prvi == 17 || prvi == 19 || drugi == 16 || drugi == 17 || drugi == 19) throw new
+		UserError("U bitskoj instrukciji nisu dozvoljeni pc, lr i psw!!!");
 	// formiranje koda instrukcije
 	int rez = 0; // niz bajtova koji ce se cuvati
 	int op; // kod operacije
@@ -192,7 +204,7 @@ void bitska(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // and, or, no
 
 void load_store(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldr, str
 	int br_param = ins.parametri.size();
-	if (br_param < 1) throw new Error(ins.ime + " funkcija mora imati bar 1 parametar !!!");
+	if (br_param < 1) throw new UserError(ins.ime + " funkcija mora imati bar 1 parametar !!!");
 	string par[3];
 
 	for (int i = 0; i < br_param; i++) {
@@ -231,13 +243,13 @@ void load_store(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldr, st
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar ldr/str funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar ldr/str funkcije mora biti registar"); }
 	r = it->second;
 
 	// konvertovanje drugog i treceg parametra ukoliko postoje
@@ -247,7 +259,7 @@ void load_store(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldr, st
 		Simbol* s = symtab->get(par[1]);
 		if (s != nullptr) { // ukoliko je labela
 			lab = true;
-			if (br_param == 3 && lab) throw new Error(
+			if (br_param == 3 && lab) throw new UserError(
 				"Ldr/str ins. sa 3 argumenta ne smeju za arg. imati labelu");
 			// odredjivanje imm
 			if (sekcija == s->sekcija) { // nema potrebe za relokacijama
@@ -270,22 +282,22 @@ void load_store(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldr, st
 			it = (registri.find(par[1]));
 			if (it == registri.end()) registar = false;
 			else a = it->second;
-			if (par[1] == "psw" || par[1] == "PSW") throw new Error("Psw ne moze biti adresni reg");
+			if (par[1] == "psw" || par[1] == "PSW") throw new UserError("Psw ne moze biti adresni reg");
 			if (!registar) { // ukoliko je 2. neposrenda velicina
-				if (param_u_broj(par[1], imm) == -1) throw new Error(ins.ime +
+				if (param_u_broj(par[1], imm) == -1) throw new UserError(ins.ime +
 					", nepravilna instrukcija");
-				if (br_param == 3) throw new Error("Nepravilna " + ins.ime + " instrukcija");
+				if (br_param == 3) throw new UserError("Nepravilna " + ins.ime + " instrukcija");
 			}
 			else { // ukoliko je 2. registar
 				// citanje 3. operanda ukoliko postoji
 				if (br_param == 3) {
-					if (param_u_broj(par[2], imm) == -1) throw new Error(ins.ime +
+					if (param_u_broj(par[2], imm) == -1) throw new UserError(ins.ime +
 						" mora imati neposrednu velicinu za 3. argument");
 				}
 			}
 		}
 	}
-	if (a == 16 && f != 0) throw new Error(ins.ime +
+	if (a == 16 && f != 0) throw new UserError(ins.ime +
 		", ukoliko je adresni registar pc, ne sme biti ni inkrementa ni dekrementa");
 	// formiranje koda instrukcije
 	int rez = 0; // niz bajtova koji ce se cuvati
@@ -312,7 +324,7 @@ void load_store(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldr, st
 }
 
 void call(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
-	if (ins.parametri.size() > 2 || ins.parametri.size() == 0) throw new Error(
+	if (ins.parametri.size() > 2 || ins.parametri.size() == 0) throw new UserError(
 		"Call instrukcija mora imati ili 1 ili 2 parametra");
 	string par[2];
 	int prvi, drugi;
@@ -327,7 +339,7 @@ void call(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
@@ -345,7 +357,7 @@ void call(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		// trazenje labele
 		par[0] = ins.parametri.front();
 		Simbol* s = symtab->get(par[0]);
-		if (s == nullptr) throw new Error(par[0] + " nije definisana!!!");
+		if (s == nullptr) throw new UserError(par[0] + " nije definisana!!!");
 		int rbr_simbola;
 		if (s->lokal == 'l') {
 			imm = s->offset - 4; // bez -4 ukoliko linker gleda add. sledece ins.
@@ -374,10 +386,10 @@ void call(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		par[1] = ins.parametri.back();
 		// konvertovanje prvog parametra u broj registra
 		iter it = (registri.find(par[0]));
-		if (it == registri.end()) throw new Error("Nperavilna instrukcija " + ins.ime);
+		if (it == registri.end()) throw new UserError("Nperavilna instrukcija " + ins.ime);
 		else prvi = it->second;
 		// konvertovanje drugog parametra
-		if (param_u_broj(par[1], drugi) == -1) throw new Error("Nperavilna instrukcija " + ins.ime);
+		if (param_u_broj(par[1], drugi) == -1) throw new UserError("Nperavilna instrukcija " + ins.ime);
 
 		imm = drugi;
 		dst = prvi;
@@ -403,7 +415,7 @@ void call(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 }
 
 void in_out(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
-	if (ins.parametri.size() != 2) throw new Error("In/out funkcija mora imati 2 parametra !!!");
+	if (ins.parametri.size() != 2) throw new UserError("In/out funkcija mora imati 2 parametra !!!");
 	string par[2];
 	par[0] = ins.parametri.front();
 	par[1] = ins.parametri.back();
@@ -419,22 +431,22 @@ void in_out(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar in/out funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar in/out funkcije mora biti registar"); }
 	prvi = it->second;
 
 	// konvertovanje drugog parametra
 	it = (registri.find(par[1]));
-	if (it == registri.end()) { throw new Error("Drugi parametar in/out funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Drugi parametar in/out funkcije mora biti registar"); }
 	drugi = it->second;
 
 	if ((prvi < 20 && prvi >15) || (drugi < 20 && drugi >15)) throw new
-		Error("In/out instrukcije ne prihvataju pc, sp, psw i lr registre kao argumente!!!");
+		UserError("In/out instrukcije ne prihvataju pc, sp, psw i lr registre kao argumente!!!");
 	// formiranje koda instrukcije
 	int rez = 0; // niz bajtova koji ce se cuvati
 	int op = 13; // kod operacije
@@ -456,7 +468,7 @@ void in_out(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 
 void mov(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 	int br_param = ins.parametri.size();
-	if (br_param < 2) throw new Error("Mov funkcija mora imati bar 2 parametra !!!");
+	if (br_param < 2) throw new UserError("Mov funkcija mora imati bar 2 parametra !!!");
 	string par[3];
 
 	for (int i = 0; i < br_param; i++) {
@@ -486,22 +498,22 @@ void mov(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar mov funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar mov funkcije mora biti registar"); }
 	prvi = it->second;
 
 	// konvertovanje drugog parametra
 	it = (registri.find(par[1]));
-	if (it == registri.end()) { throw new Error("Drugi parametar mov funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Drugi parametar mov funkcije mora biti registar"); }
 	drugi = it->second;
 
 	if (br_param == 3) {
-		if (param_u_broj(par[2], imm) == -1) throw new Error("Treci parametar mov ins. mora biti broj");
+		if (param_u_broj(par[2], imm) == -1) throw new UserError("Treci parametar mov ins. mora biti broj");
 	}
 	// formiranje koda instrukcije
 	int rez = 0; // niz bajtova koji ce se cuvati
@@ -525,7 +537,7 @@ void mov(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 
 void shift(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // shl, shr
 	// shift mora imati dva argumenta, prvi je registar i predstavlja i izvoriste i odrediste, a drugi broj
-	if (ins.parametri.size() != 2) throw new Error("Shift funkcija mora imati 2 parametra !!!");
+	if (ins.parametri.size() != 2) throw new UserError("Shift funkcija mora imati 2 parametra !!!");
 	string par[2];
 	par[0] = ins.parametri.front();
 	par[1] = ins.parametri.back();
@@ -540,18 +552,18 @@ void shift(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // shl, shr
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar shift funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar shift funkcije mora biti registar"); }
 	prvi = it->second;
 
 	// odredjivanje pomeraja
 	int imm;
-	if (param_u_broj(par[1], imm) == -1) throw new Error("Drugi param shift ins mora biti broj");
+	if (param_u_broj(par[1], imm) == -1) throw new UserError("Drugi param shift ins mora biti broj");
 	// provera da li je pomeranje u levo lili desno
 	int shift = 0;
 	if (ins.ime == "shl") shift = 1;
@@ -577,7 +589,7 @@ void shift(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // shl, shr
 }
 
 void iret(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
-	if (ins.parametri.size() != 0) throw new Error("Iret instrukcija ne sme imati parametre!!!");
+	if (ins.parametri.size() != 0) throw new UserError("Iret instrukcija ne sme imati parametre!!!");
 
 	// parsiranje ekstenzija
 	int sign = 0;
@@ -589,7 +601,7 @@ void iret(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
@@ -612,7 +624,7 @@ void iret(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 }
 
 void ldc_word(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldch, ldcl
-	if (ins.parametri.size() != 2) throw new Error(ins.ime + " funkcija mora imati 2 parametra !!!");
+	if (ins.parametri.size() != 2) throw new UserError(ins.ime + " funkcija mora imati 2 parametra !!!");
 	string par[2];
 	par[0] = ins.parametri.front();
 	par[1] = ins.parametri.back();
@@ -628,17 +640,17 @@ void ldc_word(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldch, ldc
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) { throw new Error("Prvi parametar ldch/l funkcije mora biti registar"); }
+	if (it == registri.end()) { throw new UserError("Prvi parametar ldch/l funkcije mora biti registar"); }
 	prvi = it->second;
 
 	// konvertovanje drugog parametra
-	if (param_u_broj(par[1], drugi) == -1) throw new Error(ins.ime +
+	if (param_u_broj(par[1], drugi) == -1) throw new UserError(ins.ime +
 		", drugi operand mora biti neposredna velicina");
 	// formiranje koda instrukcije
 	int h_l = 0;
@@ -659,7 +671,7 @@ void ldc_word(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldch, ldc
 	sekcija->lc += 4;
 }
 void ldc_long(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldc
-	if (ins.parametri.size() != 2) throw new Error(
+	if (ins.parametri.size() != 2) throw new UserError(
 		"ldc instrukcija mora imati 2 parametra");
 	string par[2];
 	par[0] = ins.parametri.front();
@@ -676,13 +688,13 @@ void ldc_long(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldc
 		}
 		if (ins.ekstenzije[0] == '_') {
 			iter it = uslovi.find(ins.ekstenzije);
-			if (it == uslovi.end()) throw new Error("Nepravilna instrukcija " + ins.ime);
+			if (it == uslovi.end()) throw new UserError("Nepravilna instrukcija " + ins.ime);
 			uslov = it->second;
 		}
 	}
 	// konvertovanje prvog parametra u broj registra
 	iter it = (registri.find(par[0]));
-	if (it == registri.end()) throw new Error("Nperavilna instrukcija " + ins.ime);
+	if (it == registri.end()) throw new UserError("Nperavilna instrukcija " + ins.ime);
 	else prvi = it->second;
 
 	bool labela = false;
@@ -693,7 +705,7 @@ void ldc_long(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldc
 	if (labela) {
 		// trazenje labele
 		Simbol* s = symtab->get(par[1]);
-		if (s == nullptr) throw new Error(ins.ime + ", " + par[1] + " nije definisana!!!");
+		if (s == nullptr) throw new UserError(ins.ime + ", " + par[1] + " nije definisana!!!");
 
 		// potrebne dve relokacije
 		Relokacija* relh = new Relokacija();
@@ -719,7 +731,7 @@ void ldc_long(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // ldc
 	}
 	else { // ukoliko je format ldc r1, 0x4
 		// konvertovanje drugog parametra
-		if (param_u_broj(par[1], drugi) == -1) throw new Error("Nperavilna instrukcija " + ins.ime);
+		if (param_u_broj(par[1], drugi) == -1) throw new UserError("Nperavilna instrukcija " + ins.ime);
 		// postavljanje ch i cl
 		ch = (drugi >> 16) & 0x0000ffff;
 		cl = drugi & 0x0000ffff;
@@ -764,13 +776,13 @@ void long_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 		string op1 = "", op2 = "";
 		char znak = 0;
 		int pom = parsiraj_izraz(*it, op1, op2, znak);
-		if (pom == -1) throw new Error("Nepravilna direktiva .long");
+		if (pom == -1) throw new UserError("Nepravilna direktiva .long");
 
 		int kod = 0;
 		if (pom == 1) { // U pitanju je samo jedan parametar
 			if (param_u_broj(op1, kod) == -1) { // u pitanju je labela
 				Simbol* s = symtab->get(op1);
-				if (s == nullptr) throw new Error("Nepravilna direktiva .long");
+				if (s == nullptr) throw new UserError("Nepravilna direktiva .long");
 				// Pravi se zapis o relokaciji
 				Relokacija* rel = new Relokacija();
 				if (s->lokal == 'l') {
@@ -792,7 +804,7 @@ void long_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 			// prvi operand izraza : 
 			if (param_u_broj(op1, kod) == -1) { // u pitanju je labela
 				Simbol* s = symtab->get(op1);
-				if (s == nullptr) throw new Error("Nepravilna direktiva .long");
+				if (s == nullptr) throw new UserError("Nepravilna direktiva .long");
 				// Pravi se zapis o relokaciji
 				Relokacija* rel = new Relokacija();
 				if (s->lokal == 'l') {
@@ -813,7 +825,7 @@ void long_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 			int pom_kod;
 			if (param_u_broj(op2, pom_kod) == -1) { // u pitanju je labela
 				Simbol* s = symtab->get(op2);
-				if (s == nullptr) throw new Error("Nepravilna direktiva .long");
+				if (s == nullptr) throw new UserError("Nepravilna direktiva .long");
 				// Pravi se zapis o relokaciji
 				Relokacija* rel = new Relokacija();
 				if (s->lokal == 'l') {
@@ -848,8 +860,8 @@ void long_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 void word_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 	for (list<string>::iterator it = ins.parametri.begin(); it != ins.parametri.end(); ++it) {
 		int broj;
-		if (param_u_broj(*it, broj) == -1) throw new Error(ins.ime + " prihvata samo brojeve");
-		if (broj > 0xFFFF) throw new Error(ins.ime + " prihvata brojeve manje od 0xFFFF");
+		if (param_u_broj(*it, broj) == -1) throw new UserError(ins.ime + " prihvata samo brojeve");
+		if (broj > 0xFFFF) throw new UserError(ins.ime + " prihvata brojeve manje od 0xFFFF");
 		short c = broj;
 		char prvi = (c >> 8) & 0xFF;
 		char drugi = c & 0xFF;
@@ -862,8 +874,8 @@ void word_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 void char_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 	for (list<string>::iterator it = ins.parametri.begin(); it != ins.parametri.end(); ++it) {
 		int broj;
-		if (param_u_broj(*it, broj) == -1) throw new Error(ins.ime + " prihvata samo brojeve");
-		if (broj > 0xFF) throw new Error(ins.ime + " prihvata brojeve manje od 0xFF");
+		if (param_u_broj(*it, broj) == -1) throw new UserError(ins.ime + " prihvata samo brojeve");
+		if (broj > 0xFF) throw new UserError(ins.ime + " prihvata brojeve manje od 0xFF");
 		char c = broj;
 		sekcija->niz_bajtova.push_back(c);
 	}
@@ -891,8 +903,8 @@ void align_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // is
 
 void skip_direktiva(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) {
 	int param;
-	if (ins.parametri.size() != 1) throw new Error(ins.ime + " prihvata jedan argument, koji je broj");
-	if (param_u_broj(ins.parametri.front(), param) == -1) throw new Error(ins.ime +
+	if (ins.parametri.size() != 1) throw new UserError(ins.ime + " prihvata jedan argument, koji je broj");
+	if (param_u_broj(ins.parametri.front(), param) == -1) throw new UserError(ins.ime +
 		" prihvata jedan argument, koji je broj");
 	for (int i = 0; i < param; i++) {
 		sekcija->niz_bajtova.push_back(0);

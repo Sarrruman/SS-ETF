@@ -1,5 +1,5 @@
-﻿  symtab.cpp
-c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(22): warning C4099: 'Instrukcija': type name first seen using 'class' now seen using 'struct'
-  c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(22): note: see declaration of 'Instrukcija'
+﻿  main.cpp
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(23): warning C4099: 'Instrukcija': type name first seen using 'class' now seen using 'struct'
+  c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(23): note: see declaration of 'Instrukcija'
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.exe
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.pdb (Full PDB)

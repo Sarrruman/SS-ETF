@@ -1,170 +1,29 @@
 #include <iostream>
-#include<fstream>
+#include <fstream>
 #include <string>
-#include <iomanip>
-#include <sstream>
-#include "sekcija.h"
 #include <map>
-#include <bitset>
+#include "sekcija.h"
 #include "utilities.h"
 #include "symtab.h"
-#include <string>
-#include <fstream>
-#include <sstream>
+
 using namespace std;
 
 extern map<string, fp> hes_funkcija;
 void init_hes_funkcija();
 
-void test1();
-void test2();
-void test3();
-
-void main() {
-	test3();
-
-	char n;
-	cin >> n;
-	system("PAUSE");
-}
-
-void test1() {
-	init_hes_funkcija();
-	ofstream fout("izlaz.txt");
-
-	cout << "hello from here" << endl;
-	cout << 10 << endl;
-	cout << setw(10) << setbase(16) << showbase << 10 << setw(10) << 11 << 12 << endl;
-	cout << 10 << endl;
-
-	fout.close();
-
-	string line = "d";
-	while (!line.empty()) {
-		list<string> params;
-		stringstream sline;
-		cout << "unesite liniju : " << endl;
-		getline(cin, line);
-		sline << line;
-
-		string op;
-		int n;
-		sline >> op;
-
-		if (op[op.size() - 1] == ':') {
-			cout << "labela je: " << op.substr(0, op.size() - 1) << endl;
-			sline >> op;
-		}
-		if (!op.empty()) {
-			bool found = false;
-			string built_op;
-			string extensions;
-			for (int i = 0; i < op.size(); i++) {
-				built_op += op[i];
-				if (hes_funkcija.find(built_op) != hes_funkcija.end()) {
-					cout << built_op << endl;
-					extensions = op.substr(built_op.length());
-					extensions.empty() ? (cout << "nema ekstenzije" << endl) : (cout << extensions << endl);
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				if (op == ".char") {
-					cout << op;
-				}
-				else if (op == ".word") {
-					cout << op;
-				}
-				else if (op == ".long") {
-					cout << op;
-				}
-				else if (op == ".align") {
-					cout << op;
-				}
-				else if (op == ".skip") {
-					cout << op;
-				}
-				else if (op == ".public") {
-					cout << op;
-				}
-				else if (op == ".extern") {
-					cout << op;
-				}
-				else if (op == ".end") {
-					cout << op;
-				}
-				else if (op.substr(0, 5) == ".text") {
-					cout << op;
-				}
-				else if (op.substr(0, 5) == ".data") {
-					cout << op;
-				}
-				else { // GRESKA !!!
-					cout << "ne postoji" << endl;
-				}
-
-			}
-			else { // if found
-				   // extract parameters
-				while (sline.good())
-				{
-					string param;
-					getline(sline, param, ',');
-
-					// skloniti whitespaces
-					stringstream ss;
-					ss << param;
-					ss >> param;
-
-					params.push_back(param);
-				}
-				params.empty() ? (cout << "Nema parametara" << endl) : (cout << "parametri su: " << endl);
-				for (list<string>::iterator it = params.begin(); it != params.end(); ++it) {
-					cout << dec << *it << (*it).size() << endl;
-				}
-
-			}
-		}
-
-	}
-}
-
-int parsiraj_izraz(string izraz, string& op1, string& op2, char& znak);
-void test2() {
-	bitset<32> bitovi;
-
-	string line = "d";
-	while (!line.empty()) {
-		cout << "unesite liniju : " << endl;
-		string izraz;
-		getline(cin, izraz);
-		stringstream sline;
-
-		
-		char znak;
-
-		string op1, op2;
-		if (parsiraj_izraz(izraz, op1, op2, znak) == -1) {cout << "Greska"; return;}
-		else {
-			cout << op1 << ":::::::" << endl;
-			cout << znak << ":::::::" << endl;
-			cout << op2 << ":::::::" << endl;
-		}
-	}
-	cout << setfill(' ') << left << setw(20) << "zdravo" << setw(20) << "hello" << setw(20) << "hello" << endl;
-	cout << setw(20) << "hello" << setw(20) << "zdravo " << endl;
-
-}
-
-void test3() {
+int main(int argc, char* argv[]) {
 	init_hes_funkcija();
 	init_uslovi();
 	init_registri();
 
+	//if (argc < 2) {
+	//	cout << "Nije prosledjen nijedan argument!!!";
+	//	system("PAUSE");
+	//	return 1;
+	//}
 	ifstream fin("ulaz.txt");
 	ofstream fout("izlaz.txt");
-	if (!fin.is_open()) { cout << "Nije pronadjen ulazni fajl" << endl; system("PAUSE"); exit(1); }
+	if (!fin.is_open()) { cout << "Nije pronadjen ulazni fajl" << endl; system("PAUSE"); return 1; }
 
 	ListaSekcija* lista_sekcija = new ListaSekcija();
 	SymTab* symtab = new SymTab();
@@ -174,8 +33,15 @@ void test3() {
 		drugi_prolaz(lista_sekcija, symtab);
 		ispis(fout, lista_sekcija, symtab);
 	}
-	catch (Error e) {
-		cout << e.opis << endl;
+	catch (UserError* e) {
+		cout << e->opis << endl;
+		delete e;
+		fin.close();
+		fout.close();
+		delete lista_sekcija;
+		delete symtab;
+		system("PAUSE");
+		return 1;
 	}
 	fin.close();
 	fout.close();
@@ -183,4 +49,6 @@ void test3() {
 	delete symtab;
 
 	cout << "Uspesno!!!" << endl;
+	system("PAUSE");
+	return 0;
 }

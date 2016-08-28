@@ -4,13 +4,27 @@
 .data.prvi
 	subs r1, pc
 d:	.word 0x5
-	.long d - b
-.text.drugi
+	.char 0x5
+	.long d - b,    b, d-5
+.text.prvi
 a:   add r1, r2
 b:   adds_eq r1, pc
-     call d
+     call r1, -1
 	call b
 	ldr r1, b
-	ldc r1, d
-	
+	ldc r2, d
+
+.text.drugi	
+	call potprogram
+
+e:	
+	in r1, r3
+	mov r3, r4
+	mov>_lt  r1, r2, 0x9
+	call e
+	call b
+
+potprogram:
+	shr r1, 3
+
 .end

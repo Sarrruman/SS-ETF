@@ -24,9 +24,9 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 		sline >> op;
 
 		if (!op.empty() && (op[op.size() - 1] == ':')) {
-			if (symtab->exist(op)) throw new Error("Simbol " + op + "je vec definisan!!!");
+			if (symtab->exist(op)) throw new UserError("Simbol " + op + "je vec definisan!!!");
 			Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
-			if (sekcija == nullptr) throw new Error("Labela " + op + "se mora naci u sekciji!!!");
+			if (sekcija == nullptr) throw new UserError("Labela " + op + "se mora naci u sekciji!!!");
 
 			Simbol* simbol = new Simbol();
 			op.erase(op.size() - 1);
@@ -52,7 +52,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				// ekstrahovati parametre
 				dodaj_parametre(sline, ins->parametri);
 				// dodati instrukciju u tekucu sekciju
-				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+				if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 				sekcija->instrukcije.push_back(ins);
 				// azurirati location counter
@@ -65,7 +65,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				// ekstrahovati parametre
 				dodaj_parametre(sline, ins->parametri);
 				// dodati instrukciju u tekucu sekciju
-				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+				if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 				sekcija->instrukcije.push_back(ins);
 				// azurirati location counter
@@ -88,7 +88,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 					ins->parametri.push_back(param);
 				}
 				// dodati instrukciju u tekucu sekciju
-				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+				if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 				sekcija->instrukcije.push_back(ins);
 				// azurirati location counter
@@ -101,7 +101,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				// ekstrahovati parametre
 				dodaj_parametre(sline, ins->parametri);
 				// dodati instrukciju u tekucu sekciju
-				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+				if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 				sekcija->instrukcije.push_back(ins);
 				// azurirati location counter
@@ -112,7 +112,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 					string par = ins->parametri.front();
 					ins->parametri.pop_front();
 					try {
-						if (par[0] = 'x' && par[1] == '0') {
+						if (par[0] == '0' && par[1] == 'x') {
 							parametri[i] = stoi(par, nullptr, 16);
 						}
 						else {
@@ -121,7 +121,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 						ins->parametri.push_back(par);
 					}
 					catch (invalid_argument e) {
-						throw new Error(".align - nepravilan argument");
+						throw new UserError(".align - nepravilan argument");
 					}
 
 				}
@@ -132,7 +132,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 					else sekcija->lc += uvecanje;
 				}
 				else if (br_param > 3) { // greska 
-					throw new Error("Instrukcija .char mora imati <= 3 parametra");
+					throw new UserError("Instrukcija .char mora imati <= 3 parametra");
 				}
 
 			}
@@ -143,18 +143,18 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				// ekstrahovati parametre
 				dodaj_parametre(sline, ins->parametri);
 				// dodati instrukciju u tekucu sekciju
-				if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+				if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 				Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 				sekcija->instrukcije.push_back(ins);
 				// odrediti vrednost parametra
 				string par = ins->parametri.front();
 				int parametar;
 				try {
-					par[0] = 'x' && par[1] == '0' ? (parametar = stoi(par, nullptr, 16))
+					par[0] == '0' && par[1] == 'x' ? (parametar = stoi(par, nullptr, 16))
 						: (parametar = stoi(par, nullptr, 10));
 				}
 				catch (invalid_argument e) {
-					throw new Error(".skip - nepravilan argument");
+					throw new UserError(".skip - nepravilan argument");
 				}
 				sekcija->lc += parametar;
 			}
@@ -167,11 +167,17 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 			else if (op == ".end") {
 				return;
 			}
-			else if (op.substr(0, 5) == ".text" || op.substr(0, 5) == ".data") {
-				// provera da li posle .text ili .data
-				if (op.size() != 5 && op[5] != '.') throw new Error("Nazivi sekcije i podsekcije moraju biti odvojeni tackom");
+			else if (op.substr(0, 5) == ".text" || op.substr(0, 5) == ".data" || op.substr(0, 4) == ".bss") {
+				// provera da li posle .text ili .data postoji tacka
+				if (op.size() > 4 && (op.substr(0, 5) == ".text" || op.substr(0, 5) == ".data") &&
+					op.size() != 5 && op[5] != '.') throw new
+					UserError("Nazivi sekcije i podsekcije moraju biti odvojeni tackom");
+				// provera da li posle .bss postoji tacka
+				if (op.substr(0, 4) == ".bss" &&
+					op.size() != 4 && op[4] != '.') throw new
+					UserError("Nazivi sekcije i podsekcije moraju biti odvojeni tackom");
 
-				if (lista_sekcija->get(op) != nullptr) throw new Error(
+				if (lista_sekcija->get(op) != nullptr) throw new UserError(
 					"Sekcija definisana dva puta!!!");
 
 				Sekcija* sekcija = new Sekcija(op);
@@ -191,17 +197,17 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 				for (int i = 0; i < op.size(); i++) {
 					built_op += op[i];
 					// ukoliko se radi o instrukciji ldc koja je u nazvu ldch
-					// ili ldcl potrebno je dodati jos jedan karakter, a tako i za ostale ins. in
-					if ((i != op.size() - 1) && op == "ldc" && (op[i + 1] == 'h' || op[i + 1] == 'l'))
-						built_op += op[i];
-					if ((i != op.size() - 1) && op == "in" && op[i + 1] == 't')
-						built_op += op[i];
+					// ili ldcl potrebno je dodati jos jedan karakter, a tako i za  in
+					if ((i != op.size() - 1) && built_op == "ldc" && (op[i + 1] == 'h' || op[i + 1] == 'l'))
+						built_op += op[i+1];
+					if ((i != op.size() - 1) && built_op == "in" && op[i + 1] == 't')
+						built_op += op[i+1];
 					if (hes_funkcija.find(built_op) != hes_funkcija.end()) {
 						found = true;
 						break;
 					}
 				}
-				if (!found) throw new Error(op + "instrukcija ne postoji!!!\n");
+				if (!found) throw new UserError(op + "instrukcija ne postoji!!!\n");
 				else {
 					// potrebno je kreirati novu instancu klase Instrukcija koja je potrebna u drugom prolazu					
 					Instrukcija* ins = new Instrukcija();
@@ -211,7 +217,7 @@ void prvi_prolaz(ifstream& ifs, ListaSekcija* lista_sekcija, SymTab* symtab) {
 					// ekstrahovati parametre
 					dodaj_parametre(sline, ins->parametri);
 					// dodati instrukciju u tekucu sekciju
-					if (tekuca_sekcija == "") throw new Error("Instrukcija definisana izvan sekcije");
+					if (tekuca_sekcija == "") throw new UserError("Instrukcija definisana izvan sekcije");
 					Sekcija* sekcija = lista_sekcija->get(tekuca_sekcija);
 					sekcija->instrukcije.push_back(ins);
 					// azurirati location counter
@@ -246,7 +252,7 @@ void medjukorak(ListaSekcija* lista_sekcija, SymTab* symtab) {
 
 	// provera da li su svi simboli koji se izvoze definisani, i azuriranje lokaliteta
 	for (list<string>::iterator it = izvoz.begin(); it != izvoz.end(); ++it) {
-		if (!symtab->exist(*it)) throw new Error("Simbol " + *it + " se izvozi a nije definisan!!!");
+		if (!symtab->exist(*it)) throw new UserError("Simbol " + *it + " se izvozi a nije definisan!!!");
 		else {
 			(symtab->get(*it))->lokal = 'g';
 		}
@@ -270,11 +276,13 @@ void drugi_prolaz(ListaSekcija * lista_sekcija, SymTab * symtab) {
 	list<Sekcija*> sekcije = lista_sekcija->sekcije;
 	for (list<Sekcija*>::iterator sek = sekcije.begin(); sek != sekcije.end(); ++sek) {
 		Sekcija* sekcija = *sek;
-		for (list<Instrukcija*>::iterator ins = sekcija->instrukcije.begin(); ins != sekcija->instrukcije.end();
-			++ins) {
-			map<string, fp>::iterator it = hes_funkcija.find((*ins)->ime);
-			fp funkcija = it->second;
-			funkcija(*(*ins), sekcija, symtab);
+		if (sekcija->ime.substr(0, 4) != ".bss") { // nije potrebna obrada za .bss sekciju
+			for (list<Instrukcija*>::iterator ins = sekcija->instrukcije.begin(); ins != sekcija->instrukcije.end();
+				++ins) {
+				map<string, fp>::iterator it = hes_funkcija.find((*ins)->ime);
+				fp funkcija = it->second;
+				funkcija(*(*ins), sekcija, symtab);
+			}
 		}
 	}
 }
@@ -287,44 +295,47 @@ void ispis(ofstream & ofs, ListaSekcija * lista_sekcija, SymTab * symtab)
 		setw(3) << "rbr" << endl << endl;
 	for (list<Simbol*>::iterator it = symtab->simboli.begin(); it != symtab->simboli.end(); ++it) {
 		Simbol s = **it;
-		ofs << setw(15) << s.ime << setw(15) << (s.sekcija ? s.sekcija->ime : "-1") << setw(15) << setbase(16) << s.offset << setbase(10) <<
-			setw(15) << s.lokal << setw(15) << s.rbr << endl;
+		ofs << left << setw(15) << s.ime << setw(15) << (s.sekcija ? s.sekcija->ime : "-1")
+			<< setw(5) << setbase(16) << s.offset << setbase(10) <<
+			setw(15) << s.lokal << setw(3) << s.rbr << endl;
 	}
 	// ispisivanje sekcija
 	ofs << endl << endl << "<------ TABELA SEKCIJA ----->" << endl;
 	list<Sekcija*> sekcije = lista_sekcija->sekcije;
 	for (list<Sekcija*>::iterator sek = sekcije.begin(); sek != sekcije.end(); ++sek) {
 		Sekcija* sekcija = *sek;
-		ofs << endl << sekcija->ime << endl;
+		if (sekcija->ime.substr(0, 4) != ".bss") {
+			ofs << endl << sekcija->ime << endl;
 
-		int i = 0;
-		for (list<char>::iterator kod = sekcija->niz_bajtova.begin(); kod != sekcija->niz_bajtova.end();
-			++kod) {
-			if (i % 4 == 0) ofs << endl << setw(3) << hex << i << ":  ";
-			int pom = *kod;
-			pom &= 0x000000FF;
-			ofs << noshowbase << right << hex << setw(2) << setfill('0') << pom << " " << dec << setfill(' ') << left;
-			i++;
-		}
-		// ispisivanje relokacija
-		ofs << endl << endl;
-		ofs << ".rel" + sekcija->ime << endl << endl;
-		if (sekcija->relokacije.empty()) ofs << "Nema relokacija za sekciju " + sekcija->ime << endl << endl;
-		else {
-			ofs << left << setw(10) << "ofset" << setw(20) << "tip" << setw(3) << "rbr" << endl << endl;
-
-			for (list<Relokacija*>::iterator it = sekcija->relokacije.begin(); it != sekcija->relokacije.end();
-				++it) {
-				Relokacija rel = **it;
-				ofs << left << setw(10) << setbase(16) << rel.offset << setbase(10) << setw(20) << rel.tip
-					<< setw(3) << rel.rbr << endl << endl;
+			int i = 0;
+			for (list<char>::iterator kod = sekcija->niz_bajtova.begin(); kod != sekcija->niz_bajtova.end();
+				++kod) {
+				if (i % 4 == 0) ofs << endl << setw(3) << hex << i << ":  ";
+				int pom = *kod;
+				pom &= 0x000000FF;
+				ofs << noshowbase << right << hex << setw(2) << setfill('0') << pom << " " << dec << setfill(' ') << left;
+				i++;
 			}
+			// ispisivanje relokacija
+			ofs << endl << endl;
+			ofs << ".rel" + sekcija->ime << endl << endl;
+			if (sekcija->relokacije.empty()) ofs << "Nema relokacija za sekciju " + sekcija->ime << endl << endl;
+			else {
+				ofs << left << setw(10) << "ofset" << setw(20) << "tip" << setw(3) << "rbr" << endl << endl;
+
+				for (list<Relokacija*>::iterator it = sekcija->relokacije.begin(); it != sekcija->relokacije.end();
+					++it) {
+					Relokacija rel = **it;
+					ofs << left << setw(10) << setbase(16) << rel.offset << setbase(10) << setw(20) << rel.tip
+						<< setw(3) << rel.rbr << endl << endl;
+				}
+			}
+			ofs << "--------------------" << endl;
 		}
-		ofs << "--------------------" << endl;
 	}
 }
 
-Error::Error(string opis)
+UserError::UserError(string opis)
 {
 	this->opis = opis;
 }
