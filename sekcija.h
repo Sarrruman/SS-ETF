@@ -1,9 +1,8 @@
 #pragma once
 #include <list>
 #include<string>
+#include "utilities.h"
 #include "relokacija.h"
-
-class Instrukcija;
 
 using namespace std;
 

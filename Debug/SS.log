@@ -1,5 +1,12 @@
-﻿  main.cpp
-c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(23): warning C4099: 'Instrukcija': type name first seen using 'class' now seen using 'struct'
-  c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.h(23): note: see declaration of 'Instrukcija'
+﻿  utilities.cpp
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\utilities.cpp(198): warning C4018: '<': signed/unsigned mismatch
+  symtab.cpp
+  sekcija.cpp
+  main.cpp
+  funkcije.cpp
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\funkcije.cpp(545): warning C4101: 'drugi': unreferenced local variable
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\funkcije.cpp(967): warning C4018: '<': signed/unsigned mismatch
+c:\users\hp\documents\visual studio 2015\projects\osproba\ss\funkcije.cpp(978): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.exe
   SS.vcxproj -> C:\Users\hp\documents\visual studio 2015\Projects\OSProba\Debug\SS.pdb (Full PDB)

@@ -6,6 +6,7 @@
 #include <sstream>
 #include "symtab.h"
 #include <iomanip>
+#include "relokacija.h"
 
 list<string> uvoz;
 list <string> izvoz;
@@ -240,6 +241,7 @@ void dodaj_parametre(stringstream& sline, list<string>& lista) {
 		ss << param;
 		ss >> param;
 
+		if (param[0] == '\r' || param[0] == '\n') return;
 		lista.push_back(param);
 	}
 }

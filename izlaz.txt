@@ -67,7 +67,6 @@ c  :  8e 08 92 00
 10 :  ec 87 ff f0 
 14 :  ec 87 ff fc 
 18 :  ee 08 46 00 
-1c :  fe 80 00 00 
 
 .rel.text.drugi
 

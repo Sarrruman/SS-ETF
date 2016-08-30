@@ -1,6 +1,9 @@
 #pragma once
-#include "utilities.h"
-#include "sekcija.h"
+#include <string>
+#include <list>
+class Sekcija;
+
+using namespace std;
 
 struct Simbol {
 	string ime;

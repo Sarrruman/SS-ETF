@@ -5,6 +5,7 @@
 #include "sekcija.h"
 #include "symtab.h"
 #include <sstream>
+#include "relokacija.h"
 
 map<string, int> registri;
 typedef map<string, int>::iterator iter;
@@ -124,8 +125,8 @@ void aritmeticka(Instrukcija& ins, Sekcija* sekcija, SymTab* symtab) { // add, s
 		int pom;
 		if (param_u_broj(par[1], pom) == -1) throw new 
 			UserError("Arit. ins. mora za drugi par. imati ili broj ili registar");
-		pom << 14;
-		pom >> 14;
+		pom <<= 14;
+		pom >>= 14;
 		rez |= pom & 0x0003ffff;
 	}
 	else {

@@ -1,14 +1,12 @@
 #pragma once
 #include <list>
-#include<string>
-#include "utilities.h"
-#include "sekcija.h"
+#include <string>
 #include <exception>
-
-using namespace std;
+#include "symtab.h"
 
 class Sekcija;
-class SymTab;
+class ListaSekcija;
+using namespace std;
 
 void init_hes_funkcija();
 void init_uslovi();
